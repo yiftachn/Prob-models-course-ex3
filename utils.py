@@ -1,34 +1,72 @@
 from collections import Counter
-GROUPS = 9
+from typing import List, Set, Tuple
+
+import numpy as np
+import pandas as pd
+
+GROUPS_NUMBER = 9
+topics = open('./dataset/topics.txt').read().split()
 
 
-def split_input(document: list) -> list:
-    list_of_groups = [[] for i in range(GROUPS)]
-    for i in range(len(document)):
-        list_of_groups[i % 9].append(document[i])
-    return list_of_groups
+class Dataset:
+    def __init__(self, path_to_dataset_file: str):
+        self.dataset_file_path = path_to_dataset_file
+        self.words: List[str] = self._get_words_list()
+        self.documents_count = self._get_documents_count()
+        self.vocabulary_length = len(self.words)
+        self.words_counter = Counter(self.words)
+        self.dataset = self._create_text_words_df(path_to_dataset_file)
 
+    def _get_words_list(self) -> List[str]:
+        words = []
+        # Build an array with all the words in the file
+        with open(self.dataset_file_path, 'r') as file_str:
+            for line in file_str:
+                if line[:6] != '<TRAIN':
+                    for word in line.split():
+                        words.append(word)
+        file_str.close()
+        words_set = set(words)
+        words_counter = Counter(word)
+        for word in words_counter.keys():
+            if words_counter[word] < 3:
+                words_set.remove(word)
+        word_set_as_tuple = list(words_set)
+        return word_set_as_tuple
 
-def add_distribution_save_to_dict(documents: list) -> list:
-    documnets_dict = {}
-    for i in range(len(documents)):
-        if len(documents[i]) != 0:
-            doc_count = Counter(documents[i][1])
-            documnets_dict[i] = {'document': documents[i], 'doc_counter': doc_count}
-    return documnets_dict
+    def _get_documents_count(self):
+        documents_count = 0
+        # Build an array with all the words in the file
+        with open(self.dataset_file_path, 'r') as file_str:
+            for line in file_str:
+                if line[:6] != '<TRAIN' and line != '\n':
+                    documents_count = documents_count + 1
+        return documents_count
 
+    def _create_text_words_df(self,dataset_file_path:str) -> pd.DataFrame:
+        texts = np.zeros((self.documents_count,self.vocabulary_length))
+        topics = np.zeros((self.documents_count,GROUPS_NUMBER))
+        index = 0
+        with open(dataset_file_path,'r') as file_str:
+            for line in file_str:
+                if line[:6] == '<TRAIN':
+                    topics_names = line.split()[2:]
+                    for topic in topics_names:
+                        if topic[-1] == '>':
+                            topic = topic[:-1]
+                        topics[index][get_topic_index(topic)] = 1
+                elif line != '\n':
+                    words_count_in_documents = (Counter(line.split()))
+                    for word in words_count_in_documents.keys():
+                        if self.words_counter[word] > 0:
+                            texts[index][self.words.index(word)] = words_count_in_documents[word]
+                    index = index + 1
+        texts_and_topics = np.concatenate((texts,topics),axis = 1)
 
-def read_file(file):
-    document = []
-    documents = []
-    with open(file) as f:
-        for line in f:
-            if line[:6] != '<TRAIN' and line[:5] != '<TEST':
-                document.append(line.split())
-            else:
-                documents.append(document)
-                document = []
-    f.close()
-    return documents
+        df = pd.DataFrame(texts_and_topics,columns=list(range(0,self.vocabulary_length))+['y'+str(x) for x in range(0,GROUPS_NUMBER)])
+        return df
+
+def get_topic_index(topic_name: str) -> int:
+    return topics.index(topic_name)
 
 
