@@ -5,14 +5,14 @@ import numba
 import numpy as np
 import pandas as pd
 
-GROUPS_NUMBER = 9
 topics = open('./dataset/topics.txt').read().split()
+GROUPS_NUMBER = 9
 
 
 class Dataset:
     def __init__(self, path_to_dataset_file: str):
         self.dataset_file_path = path_to_dataset_file
-        self.words: List[str] = self._get_words_list()
+        self.words: List[str] = sorted(self._get_words_list())
         self.documents_count = self._get_documents_count()
         self.vocabulary_length = len(self.words)
         self.words_counter = Counter(self.words)
@@ -29,9 +29,9 @@ class Dataset:
                         words.append(word)
         file_str.close()
         words_set = set(words)
-        words_counter = Counter(word)
+        words_counter = Counter(words)
         for word in words_counter.keys():
-            if words_counter[word] < 3:
+            if words_counter[word] <= 3:
                 words_set.remove(word)
         word_set_as_tuple = list(words_set)
         return word_set_as_tuple

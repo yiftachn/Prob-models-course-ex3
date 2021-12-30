@@ -1,0 +1,20 @@
+<TRAIN	0	c1>
+
+a a c
+
+<TRAIN	1	c2>
+
+a b c c b b a
+
+<TRAIN	2	c1 c2>
+
+a a a d c
+
+<TRAIN	3 c2>
+
+d d c a b b b d
+
+<TRAIN	4 c1 c2>
+
+a b c d d c c b d a a
+
