@@ -4,6 +4,8 @@
 
 import argparse
 import logging
+import pickle
+
 import pandas as pd
 from modles import EmModel
 
@@ -16,7 +18,12 @@ parser.add_argument('development_set_filename', metavar='D', type=str, nargs=1,
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    em_model = EmModel(dataset_file_path = args.development_set_filename[0])
 
-    soft_clustering = em_model.cluster_data()
-    prediction = em_model.classify_data()
+    # on the first run use these two lines
+
+    # em_model = EmModel(dataset_file_path = args.development_set_filename[0])
+    # pickle.dump(em_model,open('em_model.pkl','wb'))
+
+    #instead of this line
+    em_model = pickle.load(open('em_model.pkl','rb'))
+    soft_clustering = em_model.EM()
