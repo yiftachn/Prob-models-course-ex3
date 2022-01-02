@@ -8,7 +8,7 @@ from utils import Dataset, get_topic_index
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from utils import GROUPS_NUMBER
+from utils import GROUPS_NUMBER,TOPICS
 import math
 
 K = 10
@@ -17,10 +17,10 @@ EPSILON = 0.00001
 
 class EmModel:
     def __init__(self, dataset_file_path: str):
-        #todo: calculate documents perplexity
+        # todo: calculate documents perplexity
 
         # save to pickle in debug mode then switch to pickle load - will be much faset.dont froget to uncomment this!!
-# todo: make sure you dont forget to delete the pickling when handing in the assigmnet
+        # todo: make sure you dont forget to delete the pickling when handing in the assigmnet
         self.dataset = Dataset(dataset_file_path)
         # self.dataset = pickle.load(open('dataset.pkl', 'rb'))
         self.cluster_probs = np.zeros((self.dataset.documents_count, GROUPS_NUMBER))
@@ -84,12 +84,23 @@ class EmModel:
     def _calculate_words_perplexity(self) -> np.ndarray:
         mean_words_perplexity = np.multiply(self.words_probs, self.alpha).sum(axis=1)
         words_perplexity = np.log(mean_words_perplexity).sum()
-        normalized_words_perplexity = -1* words_perplexity/self.dataset.vocabulary_length
+        normalized_words_perplexity = -1 * words_perplexity / self.dataset.vocabulary_length
         return np.exp(normalized_words_perplexity)
 
-    def hard_cluster(self):
-        # just use np.argmax ....
-        pass
+    def hard_cluster(self) -> np.array:
+        documents_probs_nominator = np.log(self.alpha) + self.dataset.X @ np.log(self.words_probs)
+        stable_nominator = _stabilize_numerically(documents_probs_nominator)
+        return np.argmax(stable_nominator.to_numpy(), axis=1)
+
+    def create_confusion_matrix(self):
+        y_pred = self.hard_cluster()
+        confusion_matrix = np.ndarray((GROUPS_NUMBER, len(TOPICS)))
+        for i in range(GROUPS_NUMBER):
+            for j in range(len(TOPICS)):
+                predicted_in_cluster_i = np.where(y_pred == i, 1, 0)
+                belong_to_cluster_j = self.dataset.y.iloc[:, j].to_numpy()
+                confusion_matrix[i][j] = np.multiply(predicted_in_cluster_i, belong_to_cluster_j).sum()
+        return confusion_matrix
 
 
 @numba.jit

@@ -22,6 +22,8 @@ if __name__ == '__main__':
     em_model = EmModel(dataset_file_path = args.development_set_filename[0])
     # instead of this line
     soft_clustering = em_model.EM()
+    em_model.hard_cluster()
+    em_model.create_confusion_matrix()
     # pyplot.plot(range(len(em_model.perplexity_record)), em_model.perplexity_record)
     pyplot.plot(range(len(em_model.perplexity_record)), em_model.log_likelihood_record)
     pyplot.show()
