@@ -67,6 +67,6 @@ class Dataset:
         topics_df = pd.DataFrame(topics, columns=['y' + str(x) for x in range(0, len(TOPICS))])
         return (text_df, topics_df)
 
-
+@numba.jit
 def get_topic_index(topic_name: str) -> int:
     return TOPICS.index(topic_name)

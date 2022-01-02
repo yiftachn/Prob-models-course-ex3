@@ -3,10 +3,14 @@
 import argparse
 import logging
 import pickle
-from matplotlib import pyplot
+
+import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 import pandas as pd
-from modles import EmModel
+from models import EmModel
 import numpy as np
+
+from utils import TOPICS
 
 parser = argparse.ArgumentParser(description='Get args from bash')
 parser.add_argument('development_set_filename', metavar='D', type=str, nargs=1,
@@ -16,19 +20,23 @@ parser.add_argument('development_set_filename', metavar='D', type=str, nargs=1,
 
 if __name__ == '__main__':
     args = parser.parse_args()
-
-    # on the first run use these two lines
-
     em_model = EmModel(dataset_file_path = args.development_set_filename[0])
-    # instead of this line
     soft_clustering = em_model.EM()
-    em_model.hard_cluster()
-    em_model.create_confusion_matrix()
-    # pyplot.plot(range(len(em_model.perplexity_record)), em_model.perplexity_record)
-    pyplot.plot(range(len(em_model.perplexity_record)), em_model.log_likelihood_record)
-    pyplot.show()
-    pyplot.plot(range(len(em_model.perplexity_record)), np.exp(em_model.perplexity_record))
-    pyplot.show()
-    pyplot.plot(range(len(em_model.words_perplexity_record)), em_model.words_perplexity_record)
-    pyplot.show()
+    confusion_matrix = em_model.create_confusion_matrix()
+    confusion_matrix.to_html(buf= open('confusion_matrix.html','w'))
+    for i in range(9):
+        cluster_array = confusion_matrix.iloc[i,0:9].to_numpy()
+        plt.bar(x = TOPICS,height = cluster_array)
+        plt.title(f'Cluster {i}, topic:{TOPICS[np.argmax(cluster_array)]}')
+        plt.show()
+    plt.plot(range(len(em_model.log_likelihood_record)), em_model.log_likelihood_record)
+    plt.title('Log Likelihood vs Iterations')
+    plt.xlabel('Iteration')
+    plt.ylabel('log likelihood')
+    plt.show()
+    plt.plot(range(len(em_model.words_perplexity_record)), em_model.words_perplexity_record)
+    plt.title('Perplexity vs iteration')
+    plt.xlabel('Iteration')
+    plt.ylabel('sum of log mean word perplexity')
+    plt.show()
 

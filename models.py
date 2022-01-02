@@ -1,15 +1,9 @@
-import pickle
-from typing import List
-from collections import Counter
-
 import numba.core.codegen
 
-from utils import Dataset, get_topic_index
+from utils import Dataset
 import numpy as np
 import pandas as pd
-from scipy import sparse
 from utils import GROUPS_NUMBER,TOPICS
-import math
 
 K = 10
 EPSILON = 0.00001
@@ -17,12 +11,7 @@ EPSILON = 0.00001
 
 class EmModel:
     def __init__(self, dataset_file_path: str):
-        # todo: calculate documents perplexity
-
-        # save to pickle in debug mode then switch to pickle load - will be much faset.dont froget to uncomment this!!
-        # todo: make sure you dont forget to delete the pickling when handing in the assigmnet
         self.dataset = Dataset(dataset_file_path)
-        # self.dataset = pickle.load(open('dataset.pkl', 'rb'))
         self.cluster_probs = np.zeros((self.dataset.documents_count, GROUPS_NUMBER))
         self.alpha = np.zeros((1, GROUPS_NUMBER))
         self.words_probs = np.zeros((self.dataset.vocabulary_length, GROUPS_NUMBER))
@@ -32,22 +21,19 @@ class EmModel:
         self.lmbda = 0.9
         self.threshold = 0.000001
         self._initialize()
-
+    @numba.jit
     def EM(self, iterations: int = 1000):
         new_likelihood = -1 * 10000 * 1000000
         old_likelihood = -1 * np.inf
 
         while (old_likelihood + self.threshold < new_likelihood):
             assert new_likelihood > old_likelihood
-
             old_likelihood = new_likelihood
             self.e_step()
             self.m_step()
             new_likelihood = self.log_likelihood()
             self.words_perplexity_record.append(self._calculate_words_perplexity())
             self.log_likelihood_record.append(new_likelihood)
-            self.perplexity_record.append(new_likelihood * (1 / self.dataset.documents_count))
-            # print(f'new L: {format(new_likelihood, ".6e")}, old L: {format(new_likelihood, ".6e")}')
 
     @numba.jit
     def _initialize(self):
@@ -73,26 +59,26 @@ class EmModel:
         denominator = self.dataset.X_transpose.sum(
             axis=0) @ self.cluster_probs + self.dataset.vocabulary_length * self.lmbda
         self.words_probs = nominator / denominator
-
+    @numba.jit
     def log_likelihood(self) -> np.float64:
         Z = np.log(self.alpha) + self.dataset.X @ np.log(self.words_probs)
         self._m = np.max(Z, axis=1)
         Z_stable = _stabilize_numerically(Z)
         documents_probs = Z_stable
         return (np.log(documents_probs.sum(axis=1)) + self._m).sum()
-
+    @numba.jit
     def _calculate_words_perplexity(self) -> np.ndarray:
         mean_words_perplexity = np.multiply(self.words_probs, self.alpha).sum(axis=1)
         words_perplexity = np.log(mean_words_perplexity).sum()
         normalized_words_perplexity = -1 * words_perplexity / self.dataset.vocabulary_length
         return np.exp(normalized_words_perplexity)
-
+    @numba.jit
     def hard_cluster(self) -> np.array:
         documents_probs_nominator = np.log(self.alpha) + self.dataset.X @ np.log(self.words_probs)
         stable_nominator = _stabilize_numerically(documents_probs_nominator)
         return np.argmax(stable_nominator.to_numpy(), axis=1)
-
-    def create_confusion_matrix(self):
+    @numba.jit
+    def create_confusion_matrix(self) -> pd.DataFrame:
         y_pred = self.hard_cluster()
         confusion_matrix = np.ndarray((GROUPS_NUMBER, len(TOPICS)))
         for i in range(GROUPS_NUMBER):
@@ -100,7 +86,9 @@ class EmModel:
                 predicted_in_cluster_i = np.where(y_pred == i, 1, 0)
                 belong_to_cluster_j = self.dataset.y.iloc[:, j].to_numpy()
                 confusion_matrix[i][j] = np.multiply(predicted_in_cluster_i, belong_to_cluster_j).sum()
-        return confusion_matrix
+        confusion_df = pd.DataFrame(confusion_matrix,columns=[f'topic {x}' for x in range(1,10,1)],index=[f'cluster {x}' for x in range(1,10,1)])
+        confusion_df['sum'] = confusion_matrix.sum(axis=1)
+        return confusion_df
 
 
 @numba.jit
