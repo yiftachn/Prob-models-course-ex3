@@ -87,9 +87,15 @@ class EmModel:
                 predicted_in_cluster_i = np.where(y_pred == i, 1, 0)
                 belong_to_cluster_j = self.dataset.y.iloc[:, j].to_numpy()
                 confusion_matrix[i][j] = np.multiply(predicted_in_cluster_i, belong_to_cluster_j).sum()
-        confusion_df = pd.DataFrame(confusion_matrix,columns=[f'topic {x}' for x in range(1,10,1)],index=[f'cluster {x}' for x in range(1,10,1)])
-        confusion_df['sum'] = confusion_matrix.sum(axis=1)
-        return confusion_df
+        self.confusion_df = pd.DataFrame(confusion_matrix,columns=[f'topic {x}' for x in range(1,10,1)],index=[f'cluster {x}' for x in range(1,10,1)])
+        self.confusion_df['sum'] = confusion_matrix.sum(axis=1)
+        return self.confusion_df
+
+    def calculate_accuracy(self):
+        # for each cluster sum the maximal number (which is correct)
+        conf_df = pd.DataFrame(self.confusion_df.loc[:, self.confusion_df.columns != 'sum'])
+        df = conf_df.max(axis=1)
+        return df.sum() / self.dataset.documents_count
 
 
 @numba.jit

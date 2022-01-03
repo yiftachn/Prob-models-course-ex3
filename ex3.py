@@ -20,6 +20,8 @@ if __name__ == '__main__':
     soft_clustering = em_model.EM()
     confusion_matrix = em_model.create_confusion_matrix()
     confusion_matrix.to_html(buf= open('confusion_matrix.html','w'))
+    accuracy = em_model.calculate_accuracy()
+    print(accuracy)
     for i in range(9):
         cluster_array = confusion_matrix.iloc[i,0:9].to_numpy()
         plt.bar(x = TOPICS,height = cluster_array)
@@ -35,4 +37,3 @@ if __name__ == '__main__':
     plt.xlabel('Iteration')
     plt.ylabel('mean perplexity per word')
     plt.show()
-
