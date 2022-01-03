@@ -1,3 +1,6 @@
+# Yiftach Neuman Itai Mondshine 208305359 207814724
+
+
 from collections import Counter
 from typing import List, Set, Tuple
 
@@ -70,3 +73,6 @@ class Dataset:
 @numba.jit
 def get_topic_index(topic_name: str) -> int:
     return TOPICS.index(topic_name)
+
+
+
