@@ -1,12 +1,8 @@
 # Yiftach Neuman Itai Mondshine 208305359 207814724
 
 import argparse
-import logging
-import pickle
-
 import matplotlib.pyplot as plt
 from matplotlib import pyplot as plt
-import pandas as pd
 from models import EmModel
 import numpy as np
 
@@ -29,14 +25,14 @@ if __name__ == '__main__':
         plt.bar(x = TOPICS,height = cluster_array)
         plt.title(f'Cluster {i}, topic:{TOPICS[np.argmax(cluster_array)]}')
         plt.show()
-    plt.plot(range(len(em_model.log_likelihood_record)), em_model.log_likelihood_record)
+    plt.plot(range(len(em_model.log_likelihood_record)), em_model.log_likelihood_record,scaley='log')
     plt.title('Log Likelihood vs Iterations')
     plt.xlabel('Iteration')
     plt.ylabel('log likelihood')
     plt.show()
-    plt.plot(range(len(em_model.words_perplexity_record)), em_model.words_perplexity_record)
+    plt.plot(range(len(em_model.perplexity_record)), em_model.perplexity_record)
     plt.title('Perplexity vs iteration')
     plt.xlabel('Iteration')
-    plt.ylabel('sum of log mean word perplexity')
+    plt.ylabel('mean perplexity per word')
     plt.show()
 

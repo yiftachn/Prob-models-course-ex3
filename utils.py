@@ -18,6 +18,7 @@ class Dataset:
         self.words_counter = Counter(self.words)
         self.X, self.y = self._create_text_words_df(path_to_dataset_file)
         self.X_transpose = self.X.T # vocabulary * documents
+        self.total_documents_length = self.X.sum().sum()
 
     def _get_words_list(self) -> List[str]:
         words = []

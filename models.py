@@ -32,7 +32,7 @@ class EmModel:
             self.e_step()
             self.m_step()
             new_likelihood = self.log_likelihood()
-            self.words_perplexity_record.append(self._calculate_words_perplexity())
+            self.perplexity_record.append(np.exp(-1* new_likelihood / self.dataset.total_documents_length))
             self.log_likelihood_record.append(new_likelihood)
 
     @numba.jit
@@ -68,6 +68,7 @@ class EmModel:
         return (np.log(documents_probs.sum(axis=1)) + self._m).sum()
     @numba.jit
     def _calculate_words_perplexity(self) -> np.ndarray:
+        #this is wrong and not in use
         mean_words_perplexity = np.multiply(self.words_probs, self.alpha).sum(axis=1)
         words_perplexity = np.log(mean_words_perplexity).sum()
         normalized_words_perplexity = -1 * words_perplexity / self.dataset.vocabulary_length
