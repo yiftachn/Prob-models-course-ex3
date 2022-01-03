@@ -32,7 +32,7 @@ class EmModel:
             self.e_step()
             self.m_step()
             new_likelihood = self.log_likelihood()
-            self.words_perplexity_record.append(self._calculate_words_perplexity())
+            self.perplexity_record.append(np.exp(-1* new_likelihood / self.dataset.total_documents_length))
             self.log_likelihood_record.append(new_likelihood)
 
     @numba.jit
@@ -59,7 +59,6 @@ class EmModel:
         denominator = self.dataset.X_transpose.sum(
             axis=0) @ self.cluster_probs + self.dataset.vocabulary_length * self.lmbda
         self.words_probs = nominator / denominator
-
     @numba.jit
     def log_likelihood(self) -> np.float64:
         Z = np.log(self.alpha) + self.dataset.X @ np.log(self.words_probs)
@@ -67,20 +66,18 @@ class EmModel:
         Z_stable = _stabilize_numerically(Z)
         documents_probs = Z_stable
         return (np.log(documents_probs.sum(axis=1)) + self._m).sum()
-
     @numba.jit
     def _calculate_words_perplexity(self) -> np.ndarray:
+        #this is wrong and not in use
         mean_words_perplexity = np.multiply(self.words_probs, self.alpha).sum(axis=1)
         words_perplexity = np.log(mean_words_perplexity).sum()
         normalized_words_perplexity = -1 * words_perplexity / self.dataset.vocabulary_length
         return np.exp(normalized_words_perplexity)
-
     @numba.jit
     def hard_cluster(self) -> np.array:
         documents_probs_nominator = np.log(self.alpha) + self.dataset.X @ np.log(self.words_probs)
         stable_nominator = _stabilize_numerically(documents_probs_nominator)
         return np.argmax(stable_nominator.to_numpy(), axis=1)
-
     @numba.jit
     def create_confusion_matrix(self) -> pd.DataFrame:
         y_pred = self.hard_cluster()
@@ -90,17 +87,9 @@ class EmModel:
                 predicted_in_cluster_i = np.where(y_pred == i, 1, 0)
                 belong_to_cluster_j = self.dataset.y.iloc[:, j].to_numpy()
                 confusion_matrix[i][j] = np.multiply(predicted_in_cluster_i, belong_to_cluster_j).sum()
-        self.confusion_df = pd.DataFrame(confusion_matrix,columns=[f'topic {x}' for x in range(1,10,1)],index=[f'cluster {x}' for x in range(1,10,1)])
-        self.confusion_df['sum'] = confusion_matrix.sum(axis=1)
-        self.calculate_accuracy()
-        return self.confusion_df
-
-
-    def calculate_accuracy(self):
-         # for each cluster sum the maximal number (which is correct)
-        conf_df = pd.DataFrame(self.confusion_df.loc[:, self.confusion_df.columns != 'sum'])
-        df = conf_df.max(axis=1)
-        return df.sum() / self.dataset.documents_count
+        confusion_df = pd.DataFrame(confusion_matrix,columns=[f'topic {x}' for x in range(1,10,1)],index=[f'cluster {x}' for x in range(1,10,1)])
+        confusion_df['sum'] = confusion_matrix.sum(axis=1)
+        return confusion_df
 
 
 @numba.jit
