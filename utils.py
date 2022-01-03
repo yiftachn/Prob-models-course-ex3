@@ -5,7 +5,7 @@ import numba
 import numpy as np
 import pandas as pd
 
-topics = open('./dataset/topics.txt').read().split()
+TOPICS = open('./dataset/topics.txt').read().split()
 GROUPS_NUMBER = 9
 
 
@@ -44,11 +44,10 @@ class Dataset:
                 if line[:6] != '<TRAIN' and line != '\n':
                     documents_count = documents_count + 1
         return documents_count
-
     @numba.jit
     def _create_text_words_df(self, dataset_file_path: str) -> Tuple[pd.DataFrame,pd.DataFrame]:
         texts = np.zeros((self.documents_count, self.vocabulary_length))
-        topics = np.zeros((self.documents_count, GROUPS_NUMBER))
+        topics = np.zeros((self.documents_count, len(TOPICS)))
         index = 0
         file_str = open(dataset_file_path, 'r')
         for line in file_str:
@@ -65,9 +64,9 @@ class Dataset:
                         texts[index][self.words.index(word)] = words_count_in_documents[word]
                 index = index + 1
         text_df = pd.DataFrame(texts, columns=list(range(0, self.vocabulary_length)))
-        topics_df = pd.DataFrame(topics, columns=['y' + str(x) for x in range(0, GROUPS_NUMBER)])
+        topics_df = pd.DataFrame(topics, columns=['y' + str(x) for x in range(0, len(TOPICS))])
         return (text_df, topics_df)
 
-
+@numba.jit
 def get_topic_index(topic_name: str) -> int:
-    return topics.index(topic_name)
+    return TOPICS.index(topic_name)
