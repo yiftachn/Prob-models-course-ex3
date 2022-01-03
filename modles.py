@@ -97,13 +97,13 @@ class EmModel:
 
 
     def calculate_accuracy(self):
+         # for each cluster sum the maximal number (which is correct)
         conf_df = pd.DataFrame(self.confusion_df.loc[:, self.confusion_df.columns != 'sum'])
         df = conf_df.max(axis=1)
         return df.sum() / self.dataset.documents_count
 
 
 
-    # for each cluster sum the maximal number (which is correct)
 
 
 
