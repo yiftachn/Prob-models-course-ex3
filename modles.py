@@ -103,12 +103,6 @@ class EmModel:
         return df.sum() / self.dataset.documents_count
 
 
-
-
-
-
-
-
 @numba.jit
 def _stabilize_numerically(Z: np.ndarray) -> np.ndarray:
     m = np.max(Z, axis=1)
