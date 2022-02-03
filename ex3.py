@@ -1,4 +1,3 @@
-# Yiftach Neuman Itai Mondshine 208305359 207814724
 
 import argparse
 import matplotlib.pyplot as plt
